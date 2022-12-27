@@ -333,13 +333,13 @@
     <div class="mainWindow">
       <div class="products">
         <div class="tabs">
-          <div class="tab" v-for="type in types" @click="filterType = type" :value="type" :class="{selected: filterType == type}">{{ type }}</div>
+          <div class="tab" v-for="category in categories" @click="filterCategory = category" :value="category" :class="{selected: filterCategory == category}">{{ category }}</div>
         </div>
         <table>
           <template  v-for="product in filteredProducts">
             <tr class="product">
               <td class="image" :rowspan="product.variants.length">
-                <img v-bind:src="'https:' + product.image"
+                <img v-bind:src="'https:' + product.imageUrl"
                     crossorigin="anonymous"
                     referrerpolicy="no-referrer">
               </td>
@@ -437,10 +437,10 @@
             hasLoaded: false,
             products: [],
             tags: [],
-            types: [],
+            categories: [],
             filter: "",
             filterTag: "",
-            filterType: "",
+            filterCategory: "",
             filterOnlyInSelected: false,
             variant: "",
             selectedVariantIndex: -1,
@@ -466,7 +466,7 @@
           filteredProducts: function() {
             var self = this;
             var filtered = this.products.filter((product) => 
-              (self.filterType.length == 0 || self.filterType == product.type)
+              (self.filterCategory.length == 0 || self.filterCategory == product.category)
                 &&
               (self.filterTag.length == 0  || product.tags.includes(self.filterTag))
             );
@@ -566,7 +566,7 @@
               title: products[0].title,
               subtitle: variants[0].title,
               image: products[0].image,
-              type:  products[0].type,
+              category:  products[0].category,
               tags:  products[0].tags,
               price: variants[0].price,
               discount: item.discount
@@ -615,14 +615,12 @@
         mounted: function () {
           this.$nextTick(function () {
             axios
-              .get('data.json?'+new Date().toLocaleString("da-dk", {dateStyle: "short", timeStyle: "short"}))
+              .get('https://products.it.fantastiskefroe.dk/all')
               .then(response => {
-                let storeData = (response.data);
-
-                this.products = Object.values(storeData.products);
+                const data = response.data;
+                this.products = data.products;
                 this.products.map(p => {
-                  
-                  p.variants = Object.values(p.variants).map(v => {
+                  p.variants = p.variants.map(v => {
                     v.sku = v.sku.replace(/-\d{4}/, "");
                     return v;
                   });
@@ -631,8 +629,8 @@
                 });
 
                 this.products.sort((a,b) => a.sku.localeCompare(b.sku, 'da'));
-                this.tags = storeData.tags.filter(t => !t.startsWith("_"));
-                this.types = storeData.types.sort((a,b) => {
+                this.tags = data.tags.filter(t => !t.startsWith("_"));
+                this.categories = data.categories.sort((a,b) => {
                   preferedOrder = ["Blomsterfrø","Urtefrø","Grøntsagsfrø","Mikrogrønt","Tilbehør"];
                   if(!preferedOrder.includes(a) && !preferedOrder.includes(b))
                     return a.localeCompare(b, 'da');
