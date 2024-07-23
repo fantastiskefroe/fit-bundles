@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -214,6 +213,10 @@
       height: 4rem;
     }
 
+    .bundlecart .image img {
+      height: 2rem;
+    }
+
     table {
       border-collapse: collapse;
       width: 100%;
@@ -339,49 +342,49 @@
           <template  v-for="product in filteredProducts">
             <tr class="product">
               <td class="image" :rowspan="product.variants.length">
-                <img v-bind:src="'https:' + product.imageUrl"
+                <img v-bind:src="product.main_image_url"
                     crossorigin="anonymous"
                     referrerpolicy="no-referrer">
               </td>
               <td :rowspan="product.variants.length" ><h2 class="title">{{ decode(product.title) }}</h2></td>
               <td class="checkbox variant-cell variant-checkbox" >
-                <label :for="product.variants[0].id">
-                  <input 
-                    :key="product.variants[0].id"
+                <label :for="product.variants[0].shopify_id">
+                  <input
+                    :key="product.variants[0].shopify_id"
                     type="checkbox"
-                    v-if="selectedVariantIndex >= 0 && isChecked(product.handle + '/' + product.variants[0].id)"
-                    @input="toggleItem(product.handle + '/' + product.variants[0].id)"
+                    v-if="selectedVariantIndex >= 0 && isChecked(product.handle + '/' + product.variants[0].shopify_id)"
+                    @input="toggleItem(product.handle + '/' + product.variants[0].shopify_id)"
                     checked
-                    :id="product.variants[0].id"/>
+                    :id="product.variants[0].shopify_id"/>
                   <input 
-                    :key="product.variants[0].id"
+                    :key="product.variants[0].shopify_id"
                     type="checkbox"
-                    v-if="selectedVariantIndex >= 0 && !isChecked(product.handle + '/' + product.variants[0].id)"
-                    @input="toggleItem(product.handle + '/' + product.variants[0].id)"
-                    :id="product.variants[0].id"/>
+                    v-if="selectedVariantIndex >= 0 && !isChecked(product.handle + '/' + product.variants[0].shopify_id)"
+                    @input="toggleItem(product.handle + '/' + product.variants[0].shopify_id)"
+                    :id="product.variants[0].shopify_id"/>
                 </label>
               </td>
-              <td class="variant-cell"><label :for="product.variants[0].id"><h3 class="title">{{ decode(product.variants[0].title) }}</span></label></td>
+              <td class="variant-cell"><label :for="product.variants[0].shopify_id"><h3 class="title">{{ decode(product.variants[0].title) }}</span></label></td>
             </tr>
             <tr class="variant" v-for="variant in product.variants.slice(1)" >
               <td class="checkbox">
-                <label :for="variant.id">
+                <label :for="variant.shopify_id">
                   <input 
-                    :key="variant.id"
+                    :key="variant.shopify_id"
                     type="checkbox"
-                    v-if="selectedVariantIndex >= 0 && isChecked(product.handle + '/' + variant.id)"
-                    @input="toggleItem(product.handle + '/' + variant.id)"
+                    v-if="selectedVariantIndex >= 0 && isChecked(product.handle + '/' + variant.shopify_id)"
+                    @input="toggleItem(product.handle + '/' + variant.shopify_id)"
                     checked
-                    :id="variant.id"/>
+                    :id="variant.shopify_id"/>
                   <input 
-                    :key="variant.id"
+                    :key="variant.shopify_id"
                     type="checkbox"
-                    v-if="selectedVariantIndex >= 0 && !isChecked(product.handle + '/' + variant.id)"
-                    @input="toggleItem(product.handle + '/' + variant.id)"
-                    :id="variant.id"/>
+                    v-if="selectedVariantIndex >= 0 && !isChecked(product.handle + '/' + variant.shopify_id)"
+                    @input="toggleItem(product.handle + '/' + variant.shopify_id)"
+                    :id="variant.shopify_id"/>
                 </label>
               </td>
-              <td><label :for="variant.id"><h3 class="title">{{ decode(variant.title) }}</span></label></td>
+              <td><label :for="variant.shopify_id"><h3 class="title">{{ decode(variant.title) }}</span></label></td>
             </tr>
           </template>
         </table>
@@ -395,7 +398,7 @@
             <div class="cart-product" v-for="(item, itemIndex) in bundle[index].items.map(productFromVariant)" :key="item.id">
               <span class="dragHandle">⠿</span>
               <div class="image">
-                <img v-bind:src="'https:' + item.image"
+                <img v-bind:src="item.image"
                   crossorigin="anonymous"
                   referrerpolicy="no-referrer">
               </div>
@@ -466,7 +469,7 @@
           filteredProducts: function() {
             var self = this;
             var filtered = this.products.filter((product) => 
-              (self.filterCategory.length == 0 || self.filterCategory == product.category)
+              (self.filterCategory.length == 0 || self.filterCategory == product.product_type)
                 &&
               (self.filterTag.length == 0  || product.tags.includes(self.filterTag))
             );
@@ -522,8 +525,7 @@
             if (ears == undefined) {
                 return 0;
             }
-            return "" + (ears/100).toFixed(2) + " DKK";
-            
+            return "" + (ears).toFixed(2) + " DKK";
           },
           decode : function(str) {
             var doc = new DOMParser().parseFromString(str, "text/html");
@@ -558,14 +560,14 @@
             let products = this.products.filter(p => p.handle == handle);
             if(products.length != 1)
               return null;
-            let variants = products[0].variants.filter(v => v.id+"" == variantID);
+            let variants = products[0].variants.filter(v => v.shopify_id + "" == variantID);
             if(variants.length != 1)
               return null;
             return {
               id: item.id,
               title: products[0].title,
               subtitle: variants[0].title,
-              image: products[0].image,
+              image: products[0].main_image_url,
               category:  products[0].category,
               tags:  products[0].tags,
               price: variants[0].price,
@@ -597,7 +599,7 @@
                   let product = self.products.filter((p) => p.handle == productHandle);
                   if(product.length != 1)
                     return false;
-                  let variant = product[0].variants.filter((v) => v.id == variantId);
+                  let variant = product[0].variants.filter((v) => v.shopify_id == variantId);
                   if(variant.length != 1)
                     return false;
                   return {
@@ -615,10 +617,10 @@
         mounted: function () {
           this.$nextTick(function () {
             axios
-              .get('https://products.it.fantastiskefroe.dk/all')
+              .get('https://shopify-data.it.fantastiskefroe.dk/products')
               .then(response => {
                 const data = response.data;
-                this.products = data.products;
+                this.products = data.filter((p) => p.status === 'ACTIVE').filter((p) => p.product_type !== '').filter((p) => p.product_type !== 'Samling');
                 this.products.map(p => {
                   p.variants = p.variants.map(v => {
                     v.sku = v.sku.replace(/-\d{4}/, "");
@@ -629,8 +631,8 @@
                 });
 
                 this.products.sort((a,b) => a.sku.localeCompare(b.sku, 'da'));
-                this.tags = data.tags.filter(t => !t.startsWith("_"));
-                this.categories = data.categories.sort((a,b) => {
+                this.tags = [...new Set(this.products.flatMap((product) => product.tags).filter((t) => t !== '').filter((t) => !t.startsWith("_")))]
+                this.categories = [...new Set(this.products.flatMap((product) => product.product_type))].sort((a,b) => {
                   preferedOrder = ["Blomsterfrø","Urtefrø","Grøntsagsfrø","Mikrogrønt","Tilbehør"];
                   if(!preferedOrder.includes(a) && !preferedOrder.includes(b))
                     return a.localeCompare(b, 'da');
@@ -641,7 +643,7 @@
                   if(preferedOrder.includes(a) && preferedOrder.includes(b))
                     return preferedOrder.indexOf(a) - preferedOrder.indexOf(b);
                 });
-                
+
 
                 let resultString = localStorage.getItem("result");
 
